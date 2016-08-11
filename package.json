@@ -31,7 +31,7 @@
   "main": "./lib/passport-intuit",
   "dependencies": {
     "pkginfo": "0.2.x",
-    "passport-openid": "0.3.x"
+    "passport-openid": "0.4.x"
   },
   "devDependencies": {
     "vows": "^0.8.1"
