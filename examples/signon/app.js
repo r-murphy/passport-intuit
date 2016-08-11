@@ -3,6 +3,8 @@ var express = require('express')
   , util = require('util')
   , IntuitStrategy = require('passport-intuit').Strategy;
 
+var PORT = process.env.PORT || 3000;
+var WEBHOST = process.env.WEBHOST || ('http://localhost:' + PORT);
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -25,13 +27,13 @@ passport.deserializeUser(function(obj, done) {
 //   credentials (in this case, an OpenID identifier and profile), and invoke a
 //   callback with a user object.
 passport.use(new IntuitStrategy({
-    returnURL: 'http://macbook-air.local.jaredhanson.net:3000/auth/intuit/return',
-    realm: 'http://macbook-air.local.jaredhanson.net:3000/'
+    returnURL: WEBHOST + '/auth/intuit/return',
+    realm: WEBHOST + '/'
   },
   function(identifier, profile, done) {
     // asynchronous verification, for effect...
     process.nextTick(function () {
-      
+
       // To keep the example simple, the user's Intuit profile is returned to
       // represent the logged-in user.  In a typical application, you would want
       // to associate the Intuit account with a user record in your database,
@@ -42,28 +44,28 @@ passport.use(new IntuitStrategy({
   }
 ));
 
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var methodOverride = require('method-override');
+var session = require('express-session');
+var logger = require('morgan');
 
-
-
-var app = express.createServer();
+var app = express();
 
 // configure Express
-app.configure(function() {
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'ejs');
-  app.use(express.logger());
-  app.use(express.cookieParser());
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(express.session({ secret: 'keyboard cat' }));
-  // Initialize Passport!  Also use passport.session() middleware, to support
-  // persistent login sessions (recommended).
-  app.use(passport.initialize());
-  app.use(passport.session());
-  app.use(app.router);
-  app.use(express.static(__dirname + '/../../public'));
-});
-
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.use(logger('dev'));
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
+app.use(bodyParser.json()); //parse application/json
+app.use(methodOverride());
+app.use(session({ secret: 'keyboard cat' }));
+// Initialize Passport!  Also use passport.session() middleware, to support
+// persistent login sessions (recommended).
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(__dirname + '/../../public'));
 
 app.get('/', function(req, res){
   res.render('index', { user: req.user });
@@ -82,7 +84,7 @@ app.get('/login', function(req, res){
 //   request.  The first step in Intuit authentication will involve redirecting
 //   the user to intuit.com.  After authenticating, Intuit will redirect the
 //   user back to this application at /auth/intuit/return
-app.get('/auth/intuit', 
+app.get('/auth/intuit',
   passport.authenticate('intuit', { failureRedirect: '/login' }),
   function(req, res) {
     res.redirect('/');
@@ -93,7 +95,7 @@ app.get('/auth/intuit',
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/auth/intuit/return', 
+app.get('/auth/intuit/return',
   passport.authenticate('intuit', { failureRedirect: '/login' }),
   function(req, res) {
     res.redirect('/');
